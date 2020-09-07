@@ -350,6 +350,7 @@ namespace com.tiberiumfusion.ttplugins.Management
             List<string> restrictedNamespaces = new List<string>()
             {
                 "System.Reflection",
+                "HarmonyLib"
             };
 
             bool pass = true;
