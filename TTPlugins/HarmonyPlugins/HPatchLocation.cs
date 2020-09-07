@@ -19,6 +19,11 @@ namespace com.tiberiumfusion.ttplugins.HarmonyPlugins
         /// <summary>
         /// Indicates that a stub method should be dynamically prepended to a target method as a prefix method.
         /// </summary>
-        Prefix = 1
+        Prefix = 1,
+
+        /// <summary>
+        /// Indicates that a stub method should be dynamically prepended to a target method as a transpiler method.
+        /// </summary>
+        Transpiler = 2
     }
 }

@@ -8,9 +8,11 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Text;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using HarmonyLib;
 
 namespace com.tiberiumfusion.ttplugins.HarmonyPlugins
 {
@@ -943,6 +945,91 @@ namespace com.tiberiumfusion.ttplugins.HarmonyPlugins
             public static bool IsLocalPlayerTypingSomething()
             {
                 return IsLocalPlayerTypingInChat() || IsLocalPlayerRenamingChest() || IsLocalPlayerEditingASign() || IsLocalPlayerTypingInASearchBox();
+            }
+        }
+
+        #endregion
+
+        #region Transpiler
+
+        /// <summary>
+        /// Replace IL code lines after the first appearance list of instructions.
+        /// </summary>
+        /// <param name="linesToRemove">Number of lines to remove</param>
+        /// <param name="newInstructions">Instructions to be put in place of the old ones</param>
+        /// <param name="instructions">IEnumerable of CodeInstructions to treat</param>
+        /// <param name="opCodes">List of OpCodes before the lines to replace</param>
+        /// <returns>The new treated IEnumerable of CodeInstructions</returns>
+        public static IEnumerable<CodeInstruction> ReplaceLines(int linesToRemove, CodeInstruction[] newInstructions,
+            IEnumerable<CodeInstruction> instructions, params OpCode[] opCodes)
+        {
+            List<CodeInstruction> codeInstructions = instructions.ToList();
+            int requirement = 0;
+            foreach (CodeInstruction codeInstruction in codeInstructions)
+            {
+                if (requirement < opCodes.Length)
+                {
+                    TestCodeInstruction(ref requirement, codeInstruction, opCodes[requirement]);
+                    yield return codeInstruction;
+                }
+                else if (requirement < opCodes.Length + linesToRemove)
+                {
+                    requirement++;
+                }
+                else if (requirement == opCodes.Length + linesToRemove)
+                {
+                    if (newInstructions != null)
+                    {
+                        foreach (CodeInstruction newInstruction in newInstructions)
+                        {
+                            yield return newInstruction;
+                        }
+                    }
+
+                    requirement++;
+                    yield return codeInstruction;
+                }
+                else
+                {
+                    yield return codeInstruction;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Removes IL code lines after the first appearance list of instructions.
+        /// </summary>
+        /// <param name="linesToRemove">Number of lines to remove</param>
+        /// <param name="instructions">IEnumerable of CodeInstructions to treat</param>
+        /// <param name="opCodes">List of OpCodes before the lines to remove</param>
+        /// <returns>The new treated IEnumerable of CodeInstructions</returns>
+        public static IEnumerable<CodeInstruction> RemoveLines(int linesToRemove,
+            IEnumerable<CodeInstruction> instructions, params OpCode[] opCodes)
+        {
+            return HHelpers.ReplaceLines(linesToRemove, null, instructions, opCodes);
+        }
+        
+        /// <summary>
+        /// Insert IL code lines after the first appearance list of instructions.
+        /// </summary>
+        /// <param name="newInstructions">Instructions to be inserted</param>
+        /// <param name="instructions">IEnumerable of CodeInstructions to treat</param>
+        /// <param name="opCodes">List of OpCodes before the lines to insert</param>
+        /// <returns>The new treated IEnumerable of CodeInstructions</returns>
+        public static IEnumerable<CodeInstruction> InsertLines(CodeInstruction[] newInstructions, IEnumerable<CodeInstruction> instructions, params OpCode[] opCodes)
+        {
+            return HHelpers.ReplaceLines(0, newInstructions, instructions, opCodes);
+        }
+
+        private static void TestCodeInstruction(ref int requirement, CodeInstruction codeInstruction, OpCode opCode)
+        {
+            if (codeInstruction.opcode.Equals(opCode))
+            {
+                requirement++;
+            }
+            else
+            {
+                requirement = 0;
             }
         }
 

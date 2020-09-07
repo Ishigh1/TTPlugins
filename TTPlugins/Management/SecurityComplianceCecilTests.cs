@@ -260,8 +260,7 @@ namespace com.tiberiumfusion.ttplugins.Management
         {
             List<string> restrictedNamespaces = new List<string>()
             {
-                "com.tiberiumfusion",
-                "HarmonyLib",
+                "com.tiberiumfusion"
             };
             List<string> whitelistedNamespaces = new List<string>()
             {

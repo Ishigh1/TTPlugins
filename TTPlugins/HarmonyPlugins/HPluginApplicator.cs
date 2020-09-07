@@ -612,6 +612,7 @@ namespace com.tiberiumfusion.ttplugins.HarmonyPlugins
                             string dpatchloc = "";
                             if (patchOp.PatchLocation == HPatchLocation.Prefix) dpatchloc = " (prefix)";
                             else if (patchOp.PatchLocation == HPatchLocation.Postfix) dpatchloc = " (postfix)";
+                            else if (patchOp.PatchLocation == HPatchLocation.Transpiler) dpatchloc = " (transpiler)";
                             string[] dmessage = new string[3];
                             dmessage[0] = "Processing patch op for plugin \"" + pluginType.FullName + "\" from \"" + supervisedPlugin.SourceFileRelativePath + "\"" + dpatchloc + "";
                             if (patchOp.TargetMethod == null)
@@ -654,10 +655,18 @@ namespace com.tiberiumfusion.ttplugins.HarmonyPlugins
                             try
                             {
                                 DLog("Applying patch...", 6);
-                                if (patchOp.PatchLocation == HPatchLocation.Prefix)
-                                    HarmonyInstance.Patch(patchOp.TargetMethod, new HarmonyMethod(patchOp.StubMethod, patchOp.PatchPriority));
-                                else if (patchOp.PatchLocation == HPatchLocation.Postfix)
-                                    HarmonyInstance.Patch(patchOp.TargetMethod, null, new HarmonyMethod(patchOp.StubMethod, patchOp.PatchPriority));
+                                switch (patchOp.PatchLocation)
+                                {
+                                    case HPatchLocation.Prefix:
+                                        HarmonyInstance.Patch(patchOp.TargetMethod, new HarmonyMethod(patchOp.StubMethod, patchOp.PatchPriority));
+                                        break;
+                                    case HPatchLocation.Postfix:
+                                        HarmonyInstance.Patch(patchOp.TargetMethod, postfix:new HarmonyMethod(patchOp.StubMethod, patchOp.PatchPriority));
+                                        break;
+                                    case HPatchLocation.Transpiler:
+                                        HarmonyInstance.Patch(patchOp.TargetMethod, transpiler:new HarmonyMethod(patchOp.StubMethod, patchOp.PatchPriority));
+                                        break;
+                                }
 
                                 if (!AppliedHPlugins.Contains(supervisedPlugin))
                                     AppliedHPlugins.Add(supervisedPlugin);
